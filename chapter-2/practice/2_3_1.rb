@@ -1,4 +1,4 @@
-coffie = 300
+coffie = 400
 espreso = 100
 
 puts "コーヒー: #{coffie}円"
