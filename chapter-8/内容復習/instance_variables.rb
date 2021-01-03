@@ -1,6 +1,6 @@
 class Drink
     def order(item)
-      @name = item
+        @name = item
     end
 end
 
