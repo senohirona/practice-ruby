@@ -199,3 +199,138 @@ Puma starting in single mode...
 getメソッドに"/drink"を引数で私、リクエストのパスが"/drink"のときの処理をブロックで書く。
 ["カフェラテ","モカ","コーヒー"].sample は配列の要素いずれか1つをランダムで返す。
 ブラウザでアクセスされるたびにこのプログラムが実行され、ランダムに選ばれたドリンク1つが表示される。(リロードも同様)
+
+# 10-3 webへアクセスするプログラムを作る
+
+## webページへアクセスしてHTMLを取得する
+普段はブラウザでアクセスしているwebページへ、プログラムを書いてアクセスしてみる。
+webページへアクセスするためにはHTTPまたはHTTPSを使う。
+Rubyで用意しているnet/httpライブラリを使って、指定したURLへHTTPやHTTPSでアクセスしてみる。
+
+
+```
+require "net/http"
+require "uri"
+
+uri = URI.parse("https://example.com/")
+puts Net::HTTP.get(uri)
+```
+
+
+require "net/httpで標準添付ライブラリnet/httpを読み込む。
+これでNet::HTTPクラスを使えるようになる。(::は名前空間の指定で、Netモジュールの中にあるHTTPクラスを指す)
+require "uri"で標準添付ライブラリuriを読み込む。これでURIモジュールを使えるようになる。
+URI.parseメソッドにURL文字を渡すことで、URIオブジェクトを作っている。
+(https://example.com/ はIANAが例として用意しているURLのこと)
+Net::HTTP.getメソッドにURIオブジェクトを渡すと、URIオブジェクトが示す先のwebサーバへHTTP GETメソッドでリクエストを送る。
+webサーバが返したレスポンスHTMLが戻り値となり、pメソッドで表示されている。
+
+
+```
+$ ruby get.rb
+<!doctype html>
+<html>
+<head>
+    <title>Example Domain</title>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type="text/css">
+    body {
+        background-color: #f0f0f2;
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+    }
+    div {
+        width: 600px;
+        margin: 5em auto;
+        padding: 2em;
+        background-color: #fdfdff;
+        border-radius: 0.5em;
+        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);
+    }
+    a:link, a:visited {
+        color: #38488f;
+        text-decoration: none;
+    }
+    @media (max-width: 700px) {
+        div {
+            margin: 0 auto;
+            width: auto;
+        }
+    }
+    </style>
+</head>
+
+<body>
+<div>
+    <h1>Example Domain</h1>
+    <p>This domain is for use in illustrative examples in documents. You may use this
+    domain in literature without prior coordination or asking for permission.</p>
+    <p><a href="https://www.iana.org/domains/example">More information...</a></p>
+</div>
+</body>
+</html>
+```
+
+
+## webページへアクセスしてJSONを取得する
+先程のプログラムで取得したHTMLは、ブラウザで見ることが主目的のため、HTMLデータの中から目当てのデータを取得する用途には向いていない。
+データをやり取りすることを目的として別の形式として、JSONがある。
+ここでは、web上のJSON形式のデータへアクセスして、中のデータを取得してみる。
+
+```
+require "net/http"
+require "uri"
+uri = URI.parse("https://igarashikuniaki.net/example.json")
+p result = Net::HTTP.get(uri)
+```
+
+先程書いたプログラムとほぼ同じ構成のプログラムで、違うのはURLの部分だけ。
+(URLはこの本の著者のページ)
+Net::HTTP.getで取得したものはJSON形式の文字列。今回のリクエスト先はHTMLではなく、JSONを返している。
+JSONはRubyのハッシュと似た形式。標準添付ライブラリjsonを使うとハッシュへ変換することができる。
+プログラムを書き換えていく。
+
+```
+require "net/http"
+require "uri"
+require "json"
+
+uri = URI.parse("https://igarashikuniaki.net/example.json")
+result = Net::HTTP.get(uri)
+hash = JSON.parse(result)
+p hash
+p hash["caffe latte"]
+```
+
+JSON.parseメソッドは、引数で渡したJSONである文字列を、ハッシュへと変換するメソッド。
+ハッシュに変換すれば、Rubyのプログラムの中でかんたんに扱うことができるようになる。
+
+## JSONへ変換
+先程はJSONからハッシュへの変換を行った。次はその逆であるハッシュからJSONへの変換を行う。
+ハッシュに対してto_jsonメソッドを呼ぶことでJSONへ変換することができる。
+
+## webページへHTTP POSTメソッドでリクエストをする
+例えば、住所を登録するケースで、入力フォームに情報を入れて登録ボタンを押したときに使われる。
+
+```
+require "net/http"
+require "uri"
+require "json"
+
+uri = URI("https://www.example.com")
+result = Net::HTTP.post(uri, {mocha: 400}.to_json, "Content-Type" => "application/json")
+p result
+```
+
+Net::HTTP.postメソッドを呼び出してHTTP POSTリクエストを行っている。
+HTTP POSTメソッドは例えば住所の登録など行うので、リクエストとしてデータを送ることが多い。
+引数のuriはリクエスト先
+{mocha: 400}は送るJSON形式データ
+"Content-Type" => "application/json" は送るデータの形式としてJSONを指定している。
+
+
